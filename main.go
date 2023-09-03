@@ -47,11 +47,11 @@ func handleErr(err error){
 	}
 }
 
-func (s *simpleServer) address() string {return s.address}
+func (s *simpleServer) address() string {return s.addr}
 
 func (s *simpleServer) isAlive() bool{return true}
 
-func (s *simpleServer) Server(r http.ResponseWriter, w *http.Request){
+func (s *simpleServer) Serve(r http.ResponseWriter, w *http.Request){
 	s.proxy.ServeHTTP(r,w)
 }
 
@@ -67,7 +67,7 @@ func (lb* LoadBalancer) getNextAvailableServer() Server{
 
 func (lb* LoadBalancer) serveProxy(r http.ResponseWriter,w *http.Request){
 	targetServer := lb.getNextAvailableServer()
-	fmt.Fprint("forwarding request to address %v\n",targetServer.address())
+	fmt.Println("forwarding request to address %s",targetServer.address())
 	targetServer.Serve(r,w)
 }
 
@@ -78,7 +78,7 @@ func main(){
 		newSimpleServer("https://www.instagram.com"),
 	}
 	lb := newLoadBalancer("8000",servers)
-	handleRedirect :=func(r http.ResponseWriter,w http.Request){
+	handleRedirect :=func(r http.ResponseWriter,w *http.Request){
 		lb.serveProxy(r,w)
 	}
 	http.HandleFunc("/",handleRedirect)
