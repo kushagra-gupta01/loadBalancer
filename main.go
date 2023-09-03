@@ -7,11 +7,13 @@ import (
 	"net/url"
 	"os"
 )
+
 type Server interface{
 	address() string
 	isAlive() bool
 	Serve(r http.ResponseWriter,w *http.Request)
 }
+
 type simpleServer struct{
 	addr string
 	proxy *httputil.ReverseProxy
@@ -67,15 +69,15 @@ func (lb* LoadBalancer) getNextAvailableServer() Server{
 
 func (lb* LoadBalancer) serveProxy(r http.ResponseWriter,w *http.Request){
 	targetServer := lb.getNextAvailableServer()
-	fmt.Println("forwarding request to address %s",targetServer.address())
+	fmt.Println("forwarding request to address",targetServer.address())
 	targetServer.Serve(r,w)
 }
 
 func main(){
 	servers:= []Server{
-		newSimpleServer("https://www.youtube.com"),
 		newSimpleServer("https://www.google.com"),
-		newSimpleServer("https://www.instagram.com"),
+		newSimpleServer("https://www.duckduckgo.com"),
+		newSimpleServer("https://www.linkedin.com"),
 	}
 	lb := newLoadBalancer("8000",servers)
 	handleRedirect :=func(r http.ResponseWriter,w *http.Request){
