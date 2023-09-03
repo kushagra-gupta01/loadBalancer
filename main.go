@@ -47,25 +47,35 @@ func handleErr(err error){
 	}
 }
 
-func (s *simpleServer) address string{return s.address}
+func (s *simpleServer) address() string {return s.address}
 
-func (s *simpleServer) isAlive bool{return true}
+func (s *simpleServer) isAlive() bool{return true}
 
 func (s *simpleServer) Server(r http.ResponseWriter, w *http.Request){
 	s.proxy.ServeHTTP(r,w)
 }
 
-func (lb* LoadBalancer) getNextAvailableServer() Server{}
+func (lb* LoadBalancer) getNextAvailableServer() Server{
+	server := lb.servers[lb.RoundRobbinCount%len(lb.servers)]
+	for !server.isAlive(){
+		lb.RoundRobbinCount++
+		server = lb.servers[lb.RoundRobbinCount%len(lb.servers)]
+	}
+	lb.RoundRobbinCount++
+	return server
+}
 
 func (lb* LoadBalancer) serveProxy(r http.ResponseWriter,w *http.Request){
-		
+	targetServer := lb.getNextAvailableServer()
+	fmt.Fprint("forwarding request to address %v\n",targetServer.address())
+	targetServer.Serve(r,w)
 }
 
 func main(){
-	servers:= Server[]{
-		newSimpleServer("https://www.youtube.com")
-		newSimpleServer("https://www.google.com")
-		newSimpleServer("https://www.instagram.com")
+	servers:= []Server{
+		newSimpleServer("https://www.youtube.com"),
+		newSimpleServer("https://www.google.com"),
+		newSimpleServer("https://www.instagram.com"),
 	}
 	lb := newLoadBalancer("8000",servers)
 	handleRedirect :=func(r http.ResponseWriter,w http.Request){
